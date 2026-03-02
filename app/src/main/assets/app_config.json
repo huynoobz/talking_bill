@@ -1,0 +1,14 @@
+{
+    "agribank": {
+        "receive_keyword": [": +"],
+        "m_regex": ["\\+0,0VND"]
+    },
+    "momo": {
+        "receive_keyword": ["đã nhận", "nhận tiền"],
+        "m_regex": ["0.0đ","0.0 ₫"]
+    },
+    "messaging": {
+        "receive_keyword": ["lô"],
+        "m_regex": ["\\+0,0VND","0.0 ₫", "0.0đ"]
+    }
+} 

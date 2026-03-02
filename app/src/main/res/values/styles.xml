@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="ServiceSwitchStyle">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:padding">16dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:switchMinWidth">120dp</item>
+        <item name="android:thumbTint">@color/service_switch_color</item>
+        <item name="android:trackTint">@color/service_switch_color</item>
+    </style>
+</resources> 
