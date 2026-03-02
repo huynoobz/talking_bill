@@ -1,248 +1,243 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <LinearLayout
         android:id="@+id/mainContent"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
-
-    <TextView
-        android:id="@+id/statusText"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Please enable notification access"
-        android:textSize="16sp"
-        android:layout_marginBottom="16dp"/>
-
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:layout_marginBottom="16dp"
-        android:fillViewport="true">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:padding="16dp">
 
         <TextView
-            android:id="@+id/configAppsText"
+            android:id="@+id/statusText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Loaded Apps and Required Keywords:"
-            android:textSize="14sp"
-            android:background="@android:color/white"
-            android:padding="8dp"
-            android:elevation="2dp"/>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="8dp"
-                android:gravity="center_vertical">
-
-                <EditText
-                    android:id="@+id/prefixEditText"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:hint="Speech prefix (e.g., Đã nhận)"
-                    android:inputType="text"
-                    android:padding="8dp"
-                    android:background="@android:color/white"
-                    android:elevation="2dp"/>
-
-                <EditText
-                    android:id="@+id/currencyEditText"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:hint="Currency (e.g., đồng)"
-                    android:inputType="text"
-                    android:padding="8dp"
-                    android:layout_marginStart="8dp"
-                    android:background="@android:color/white"
-                    android:elevation="2dp"/>
-
-                <Button
-                    android:id="@+id/saveSpeechButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Save"
-                    android:layout_marginStart="8dp"/>
-
-            </LinearLayout>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Manage Keywords"
-                android:textStyle="bold"
-                android:textSize="14sp" />
-
-            <EditText
-                android:id="@+id/keywordAppEditText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:hint="App key (e.g., momo)"
-                android:inputType="text"
-                android:padding="8dp"
-                android:background="@android:color/white"
-                android:elevation="2dp" />
-
-            <EditText
-                android:id="@+id/keywordEditText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:hint="Current keyword"
-                android:inputType="text"
-                android:padding="8dp"
-                android:background="@android:color/white"
-                android:elevation="2dp" />
-
-            <EditText
-                android:id="@+id/newKeywordEditText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:hint="New keyword (for update)"
-                android:inputType="text"
-                android:padding="8dp"
-                android:background="@android:color/white"
-                android:elevation="2dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <Button
-                    android:id="@+id/addKeywordButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Add" />
-
-                <Button
-                    android:id="@+id/updateKeywordButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:text="Update" />
-
-                <Button
-                    android:id="@+id/removeKeywordButton"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:layout_marginStart="8dp"
-                    android:text="Remove" />
-            </LinearLayout>
-
-        </LinearLayout>
-
-    </ScrollView>
+            android:layout_marginBottom="12dp"
+            android:text="Please enable notification access"
+            android:textSize="16sp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <EditText
+                android:id="@+id/prefixEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@android:color/white"
+                android:elevation="2dp"
+                android:hint="Speech prefix (e.g., Đã nhận)"
+                android:inputType="text"
+                android:padding="8dp" />
+
+            <EditText
+                android:id="@+id/currencyEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:background="@android:color/white"
+                android:elevation="2dp"
+                android:hint="Currency (e.g., đồng)"
+                android:inputType="text"
+                android:padding="8dp" />
+
+            <Button
+                android:id="@+id/saveSpeechButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="Save" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Manage Keywords"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/keywordAppEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@android:color/white"
+            android:elevation="2dp"
+            android:hint="App key (e.g., momo)"
+            android:inputType="text"
+            android:padding="8dp" />
+
+        <EditText
+            android:id="@+id/keywordEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@android:color/white"
+            android:elevation="2dp"
+            android:hint="Current keyword"
+            android:inputType="text"
+            android:padding="8dp" />
+
+        <EditText
+            android:id="@+id/newKeywordEditText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@android:color/white"
+            android:elevation="2dp"
+            android:hint="New keyword (for update)"
+            android:inputType="text"
+            android:padding="8dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/addKeywordButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Add" />
+
+            <Button
+                android:id="@+id/updateKeywordButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Update" />
+
+            <Button
+                android:id="@+id/removeKeywordButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="Remove" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:text="Keyword List"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="130dp"
+            android:layout_marginTop="6dp"
+            android:background="@android:color/white"
+            android:elevation="2dp"
+            android:fillViewport="true">
+
+            <TextView
+                android:id="@+id/configAppsText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:text="Loaded Apps and Required Keywords:"
+                android:textSize="14sp" />
+        </ScrollView>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:layout_marginBottom="8dp"
             android:gravity="center"
-            android:layout_marginBottom="8dp">
+            android:orientation="horizontal">
 
             <Button
                 android:id="@+id/resetButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Reset App"
-                android:visibility="gone"
+                android:layout_marginEnd="8dp"
                 android:backgroundTint="@color/toast_error"
-                android:layout_marginEnd="8dp"/>
+                android:text="Reset App"
+                android:visibility="gone" />
 
             <Button
                 android:id="@+id/clearButton"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Clear All"
-                android:visibility="gone"/>
-
+                android:visibility="gone" />
         </LinearLayout>
 
-    <Button
-        android:id="@+id/enableButton"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Enable Notification Access"
-        android:layout_marginBottom="8dp"/>
+        <Button
+            android:id="@+id/enableButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="Enable Notification Access" />
 
-    <Switch
-        android:id="@+id/saveToggle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Save Collected Notifications"
-        android:layout_marginBottom="8dp"
-        android:checked="true"/>
+        <Switch
+            android:id="@+id/saveToggle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:checked="true"
+            android:text="Save Collected Notifications" />
 
-    <Switch
-        android:id="@+id/filterToggle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Filter/Voice"
-        android:layout_marginBottom="16dp"
-        android:checked="true"/>
+        <Switch
+            android:id="@+id/filterToggle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="10dp"
+            android:checked="true"
+            android:text="Filter/Voice" />
 
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Notification List"
+            android:textSize="14sp"
+            android:textStyle="bold" />
 
-    </FrameLayout>
-
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/notificationsRecyclerView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
-
-</LinearLayout> 
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/notificationsRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:layout_marginTop="6dp" />
+    </LinearLayout>
 
     <FrameLayout
         android:id="@+id/loadingOverlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#80000000"
-        android:visibility="gone"
         android:clickable="true"
-        android:focusable="true">
+        android:focusable="true"
+        android:visibility="gone">
 
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:padding="16dp"
             android:background="@android:color/white"
-            android:elevation="4dp">
+            android:elevation="4dp"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="16dp">
 
             <ProgressBar
                 android:layout_width="48dp"
                 android:layout_height="48dp"
-                android:indeterminate="true"/>
+                android:indeterminate="true" />
 
             <TextView
                 android:id="@+id/loadingText"
@@ -250,10 +245,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="Loading..."
-                android:textSize="16sp"/>
-
+                android:textSize="16sp" />
         </LinearLayout>
-
     </FrameLayout>
 
-</FrameLayout> 
+</FrameLayout>
