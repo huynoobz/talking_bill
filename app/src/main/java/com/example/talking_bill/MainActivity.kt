@@ -19,6 +19,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.ScrollView
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
@@ -28,6 +29,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.talking_bill.databinding.ActivityMainBinding
+import com.google.android.material.tabs.TabLayout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -58,6 +60,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var saveToggle: Switch
     private lateinit var filterToggle: Switch
     private lateinit var notificationsRecyclerView: RecyclerView
+    private lateinit var settingsTabContent: ScrollView
+    private lateinit var keywordsTabContent: ScrollView
+    private lateinit var notificationsTabContent: View
     private var batteryOptimizationDialog: AlertDialog? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private lateinit var loadingOverlay: FrameLayout
@@ -150,6 +155,7 @@ class MainActivity : AppCompatActivity() {
 
         initializeViews()
         setupAdapters()
+        setupTabs()
         setupClickListeners()
         setupToggles()
         registerBroadcastReceiver()
@@ -174,6 +180,35 @@ class MainActivity : AppCompatActivity() {
         saveToggle = binding.saveToggle
         filterToggle = binding.filterToggle
         notificationsRecyclerView = binding.notificationsRecyclerView
+        settingsTabContent = binding.settingsTabContent
+        keywordsTabContent = binding.keywordsTabContent
+        notificationsTabContent = binding.notificationsTabContent
+    }
+
+    private fun setupTabs() {
+        val tabLayout = binding.mainTabLayout
+        if (tabLayout.tabCount == 0) {
+            tabLayout.addTab(tabLayout.newTab().setText("Settings"))
+            tabLayout.addTab(tabLayout.newTab().setText("Keywords"))
+            tabLayout.addTab(tabLayout.newTab().setText("Notifications"))
+        }
+
+        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) {
+                showTab(tab.position)
+            }
+
+            override fun onTabUnselected(tab: TabLayout.Tab) = Unit
+            override fun onTabReselected(tab: TabLayout.Tab) = Unit
+        })
+
+        showTab(tabLayout.selectedTabPosition.coerceAtLeast(0))
+    }
+
+    private fun showTab(position: Int) {
+        settingsTabContent.visibility = if (position == 0) View.VISIBLE else View.GONE
+        keywordsTabContent.visibility = if (position == 1) View.VISIBLE else View.GONE
+        notificationsTabContent.visibility = if (position == 2) View.VISIBLE else View.GONE
     }
 
     /**
