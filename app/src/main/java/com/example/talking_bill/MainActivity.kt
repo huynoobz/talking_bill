@@ -18,6 +18,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ScrollView
 import android.widget.Switch
@@ -53,7 +54,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var prefs: SharedPreferences
     private lateinit var binding: ActivityMainBinding
     private lateinit var statusText: TextView
-    private lateinit var configAppsText: TextView
+    private lateinit var keywordJsonEditText: EditText
     private lateinit var enableButton: Button
     private lateinit var clearButton: Button
     private lateinit var resetButton: Button
@@ -173,7 +174,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun initializeViews() {
         statusText = binding.statusText
-        configAppsText = binding.configAppsText
+        keywordJsonEditText = binding.keywordJsonEditText
         enableButton = binding.enableButton
         clearButton = binding.clearButton
         resetButton = binding.resetButton
@@ -243,16 +244,12 @@ class MainActivity : AppCompatActivity() {
             saveSpeechSettings()
         }
 
-        binding.addKeywordButton.setOnClickListener {
-            addKeyword()
+        binding.saveKeywordJsonButton.setOnClickListener {
+            saveKeywordJson()
         }
 
-        binding.updateKeywordButton.setOnClickListener {
-            updateKeyword()
-        }
-
-        binding.removeKeywordButton.setOnClickListener {
-            removeKeyword()
+        binding.resetKeywordJsonButton.setOnClickListener {
+            resetKeywordJsonToDefault()
         }
     }
 
@@ -509,147 +506,59 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Loads and displays app configuration from override file or assets.
+     * Loads app configuration and shows it in the JSON editor.
      */
     private fun loadConfig() {
         try {
             val appConfig = AppConfigStore.load(this)
-            val configText = StringBuilder("Loaded Apps and Required Keywords:\n\n")
-            appConfig.entries.forEach { (appName, config) ->
-                configText.append("$appName:\n")
-                configText.append("Keywords: ${config.receive_keyword.joinToString(", ")}\n")
-                configText.append("Money Regex: ${config.m_regex.joinToString(", ")}\n\n")
-            }
-            configAppsText.text = configText.toString()
+            keywordJsonEditText.setText(AppConfigStore.toPrettyJson(appConfig))
         } catch (e: Exception) {
             Log.e("MainActivity", "Error loading app configuration", e)
-            configAppsText.text = "Error loading app configuration. Please restart the app."
             showCustomToast("Error loading configuration", false)
         }
     }
 
-    private fun addKeyword() {
-        val appInput = binding.keywordAppEditText.text.toString().trim()
-        val keywordInput = binding.keywordEditText.text.toString().trim()
-
-        if (appInput.isEmpty() || keywordInput.isEmpty()) {
-            showCustomToast("Enter app key and keyword", false)
+    private fun saveKeywordJson() {
+        val rawJson = keywordJsonEditText.text.toString().trim()
+        if (rawJson.isEmpty()) {
+            showCustomToast("JSON cannot be empty", false)
             return
         }
 
-        val config = AppConfigStore.load(this).toMutableMap()
-        val appKey = findConfigAppKey(config, appInput)
-        if (appKey == null) {
-            showCustomToast("App key not found", false)
+        val parsedConfig = AppConfigStore.parseJson(rawJson)
+        if (parsedConfig == null) {
+            showCustomToast("Invalid JSON format", false)
             return
         }
 
-        val existing = config[appKey] ?: return
-        if (existing.receive_keyword.any { it.equals(keywordInput, ignoreCase = true) }) {
-            showCustomToast("Keyword already exists", false)
+        if (parsedConfig.isEmpty()) {
+            showCustomToast("Config cannot be empty", false)
             return
         }
 
-        config[appKey] = existing.copy(receive_keyword = existing.receive_keyword + keywordInput)
-        if (saveAndRefreshConfig(config, "Keyword added")) {
-            binding.keywordEditText.setText("")
-            binding.newKeywordEditText.setText("")
-        }
-    }
-
-    private fun updateKeyword() {
-        val appInput = binding.keywordAppEditText.text.toString().trim()
-        val currentKeyword = binding.keywordEditText.text.toString().trim()
-        val newKeyword = binding.newKeywordEditText.text.toString().trim()
-
-        if (appInput.isEmpty() || currentKeyword.isEmpty() || newKeyword.isEmpty()) {
-            showCustomToast("Enter app key, current keyword, and new keyword", false)
-            return
-        }
-
-        val config = AppConfigStore.load(this).toMutableMap()
-        val appKey = findConfigAppKey(config, appInput)
-        if (appKey == null) {
-            showCustomToast("App key not found", false)
-            return
-        }
-
-        val existing = config[appKey] ?: return
-        val hasCurrentKeyword = existing.receive_keyword.any { it.equals(currentKeyword, ignoreCase = true) }
-        if (!hasCurrentKeyword) {
-            showCustomToast("Current keyword not found", false)
-            return
-        }
-        if (existing.receive_keyword.any { it.equals(newKeyword, ignoreCase = true) && !it.equals(currentKeyword, ignoreCase = true) }) {
-            showCustomToast("New keyword already exists", false)
-            return
-        }
-
-        var replaced = false
-        val updatedKeywords = existing.receive_keyword.map { keyword ->
-            if (!replaced && keyword.equals(currentKeyword, ignoreCase = true)) {
-                replaced = true
-                newKeyword
-            } else {
-                keyword
-            }
-        }
-
-        config[appKey] = existing.copy(receive_keyword = updatedKeywords)
-        if (saveAndRefreshConfig(config, "Keyword updated")) {
-            binding.keywordEditText.setText(newKeyword)
-            binding.newKeywordEditText.setText("")
-        }
-    }
-
-    private fun removeKeyword() {
-        val appInput = binding.keywordAppEditText.text.toString().trim()
-        val keywordInput = binding.keywordEditText.text.toString().trim()
-
-        if (appInput.isEmpty() || keywordInput.isEmpty()) {
-            showCustomToast("Enter app key and keyword", false)
-            return
-        }
-
-        val config = AppConfigStore.load(this).toMutableMap()
-        val appKey = findConfigAppKey(config, appInput)
-        if (appKey == null) {
-            showCustomToast("App key not found", false)
-            return
-        }
-
-        val existing = config[appKey] ?: return
-        val updatedKeywords = existing.receive_keyword.filterNot { it.equals(keywordInput, ignoreCase = true) }
-        if (updatedKeywords.size == existing.receive_keyword.size) {
-            showCustomToast("Keyword not found", false)
-            return
-        }
-        if (updatedKeywords.isEmpty()) {
-            showCustomToast("Each app must keep at least one keyword", false)
-            return
-        }
-
-        config[appKey] = existing.copy(receive_keyword = updatedKeywords)
-        if (saveAndRefreshConfig(config, "Keyword removed")) {
-            binding.keywordEditText.setText("")
-            binding.newKeywordEditText.setText("")
-        }
-    }
-
-    private fun saveAndRefreshConfig(config: AppConfig, successMessage: String): Boolean {
-        return if (AppConfigStore.save(this, config)) {
-            loadConfig()
+        if (AppConfigStore.save(this, parsedConfig)) {
+            keywordJsonEditText.setText(AppConfigStore.toPrettyJson(parsedConfig))
             notifyServiceConfigUpdated()
-            showCustomToast(successMessage, true)
-            true
+            showCustomToast("Keyword config saved", true)
         } else {
             showCustomToast("Failed to save config", false)
-            false
         }
     }
 
-    private fun findConfigAppKey(config: Map<String, AppConfigItem>, appInput: String): String? {
-        return config.keys.firstOrNull { it.equals(appInput, ignoreCase = true) }
+    private fun resetKeywordJsonToDefault() {
+        val defaultConfig = AppConfigStore.loadDefault(this)
+        if (defaultConfig.isEmpty()) {
+            showCustomToast("Default config is empty or missing", false)
+            return
+        }
+
+        if (AppConfigStore.save(this, defaultConfig)) {
+            keywordJsonEditText.setText(AppConfigStore.toPrettyJson(defaultConfig))
+            notifyServiceConfigUpdated()
+            showCustomToast("Keyword config reset to default", true)
+        } else {
+            showCustomToast("Failed to save config", false)
+        }
     }
 
     private fun notifyServiceConfigUpdated() {

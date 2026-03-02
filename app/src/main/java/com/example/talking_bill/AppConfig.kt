@@ -3,6 +3,7 @@ package com.example.talking_bill
 import android.content.Context
 import android.util.Log
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 
 typealias AppConfig = Map<String, AppConfigItem>
@@ -18,10 +19,15 @@ object AppConfigStore {
     private const val OVERRIDE_CONFIG_FILE = "app_config_override.json"
 
     private val gson = Gson()
+    private val prettyGson = GsonBuilder().setPrettyPrinting().create()
     private val appConfigType = object : TypeToken<AppConfig>() {}.type
 
     fun load(context: Context): AppConfig {
         return loadOverrideConfig(context) ?: loadAssetConfig(context) ?: emptyMap()
+    }
+
+    fun loadDefault(context: Context): AppConfig {
+        return loadAssetConfig(context) ?: emptyMap()
     }
 
     fun save(context: Context, config: AppConfig): Boolean {
@@ -39,6 +45,19 @@ object AppConfigStore {
 
     fun clearOverride(context: Context): Boolean {
         return context.deleteFile(OVERRIDE_CONFIG_FILE)
+    }
+
+    fun parseJson(json: String): AppConfig? {
+        return try {
+            gson.fromJson<AppConfig>(json, appConfigType)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error parsing app config json", e)
+            null
+        }
+    }
+
+    fun toPrettyJson(config: AppConfig): String {
+        return prettyGson.toJson(config, appConfigType)
     }
 
     private fun loadOverrideConfig(context: Context): AppConfig? {
