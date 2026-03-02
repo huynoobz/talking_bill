@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.ComponentName
 import android.os.Bundle
 import android.os.Build
 import android.os.Handler
@@ -13,6 +14,7 @@ import android.os.Looper
 import android.service.notification.NotificationListenerService as AndroidNotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import java.text.SimpleDateFormat
@@ -26,6 +28,10 @@ class NotificationListenerService : AndroidNotificationListenerService(), TextTo
     private var appConfig: AppConfig? = null
     private var textToSpeech: TextToSpeech? = null
     private val mainHandler = Handler(Looper.getMainLooper())
+    @Volatile
+    private var ttsReady = false
+    @Volatile
+    private var ttsReinitInProgress = false
 
     override fun onCreate() {
         super.onCreate()
@@ -40,9 +46,14 @@ class NotificationListenerService : AndroidNotificationListenerService(), TextTo
      * Initialize TextToSpeech engine.
      */
     private fun initTextToSpeech() {
+        if (ttsReinitInProgress) return
+        ttsReinitInProgress = true
         try {
+            safeShutdownTextToSpeech()
             textToSpeech = TextToSpeech(this, this)
         } catch (e: Exception) {
+            ttsReinitInProgress = false
+            ttsReady = false
             Log.e(TAG, "Error initializing TextToSpeech", e)
         }
     }
@@ -52,15 +63,38 @@ class NotificationListenerService : AndroidNotificationListenerService(), TextTo
             if (status == TextToSpeech.SUCCESS) {
                 val result = textToSpeech?.setLanguage(Locale("vi"))
                 if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    ttsReady = false
+                    ttsReinitInProgress = false
                     Log.e(TAG, "Language not supported")
+                    scheduleTtsReinit("Language not supported")
+                    return
                 }
                 // Set slower speech rate (0.8 is slower than default 1.0)
                 textToSpeech?.setSpeechRate(0.8f)
+                textToSpeech?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                    override fun onStart(utteranceId: String?) = Unit
+
+                    override fun onDone(utteranceId: String?) = Unit
+
+                    @Suppress("OVERRIDE_DEPRECATION")
+                    override fun onError(utteranceId: String?) {
+                        ttsReady = false
+                        scheduleTtsReinit("Utterance error for id=$utteranceId")
+                    }
+                })
+                ttsReady = true
+                ttsReinitInProgress = false
             } else {
+                ttsReady = false
+                ttsReinitInProgress = false
                 Log.e(TAG, "TextToSpeech initialization failed with status: $status")
+                scheduleTtsReinit("TTS init failed status=$status")
             }
         } catch (e: Exception) {
+            ttsReady = false
+            ttsReinitInProgress = false
             Log.e(TAG, "Error in TextToSpeech initialization", e)
+            scheduleTtsReinit("Exception in onInit")
         }
     }
 
@@ -73,19 +107,35 @@ class NotificationListenerService : AndroidNotificationListenerService(), TextTo
             val prefix = prefs.getString(KEY_SPEECH_PREFIX, "Đã nhận") ?: "Đã nhận"
             val currency = prefs.getString(KEY_SPEECH_CURRENCY, "đồng") ?: "đồng"
             val text = "$prefix, $amount, $currency"
-            
+
             textToSpeech?.let { tts ->
                 try {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "MONEY_ANNOUNCEMENT")
+                    if (!ttsReady) {
+                        Log.w(TAG, "TTS not ready, skipping speak and scheduling reinit")
+                        scheduleTtsReinit("TTS not ready during speak")
+                        return
+                    }
+
+                    val utteranceId = "MONEY_ANNOUNCEMENT_${System.currentTimeMillis()}"
+                    val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
                     } else {
                         @Suppress("DEPRECATION")
                         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null)
                     }
+
+                    if (result == TextToSpeech.ERROR) {
+                        ttsReady = false
+                        Log.e(TAG, "TTS speak returned ERROR")
+                        scheduleTtsReinit("TTS speak returned ERROR")
+                    }
                 } catch (e: Exception) {
+                    ttsReady = false
                     Log.e(TAG, "Error speaking amount", e)
+                    scheduleTtsReinit("Exception during speak")
                 }
             } ?: run {
+                ttsReady = false
                 Log.e(TAG, "TextToSpeech is null")
                 // Try to reinitialize TextToSpeech
                 initTextToSpeech()
@@ -99,30 +149,37 @@ class NotificationListenerService : AndroidNotificationListenerService(), TextTo
         // Log.d(TAG, "Service onStartCommand called")
         // Reload config to ensure we have the latest data
         loadConfig()
-        
-        // If service was killed, restart it
-        if (intent == null) {
-            // Log.d(TAG, "Service was killed, restarting...")
-            val restartIntent = Intent(applicationContext, NotificationListenerService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(restartIntent)
-            } else {
-                startService(restartIntent)
-            }
+
+        if (intent?.action == ACTION_RELOAD_CONFIG) {
+            // Explicitly handle config refresh request from MainActivity.
+            loadConfig()
         }
-        
+
         // Return START_STICKY to ensure service restarts if killed
         return START_STICKY
     }
 
     override fun onListenerConnected() {
         super.onListenerConnected()
-        // Log.d(TAG, "Notification listener connected")
+        // Ensure latest config and TTS are ready after listener reconnect.
+        loadConfig()
+        if (!ttsReady || textToSpeech == null) {
+            initTextToSpeech()
+        }
     }
 
     override fun onListenerDisconnected() {
         super.onListenerDisconnected()
-        // Log.d(TAG, "Notification listener disconnected")
+        Log.w(TAG, "Notification listener disconnected, requesting rebind")
+        try {
+            val componentName = ComponentName(this, NotificationListenerService::class.java)
+            requestRebind(componentName)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error requesting notification listener rebind", e)
+        }
+
+        // Keep TTS warm when listener comes back.
+        scheduleTtsReinit("Listener disconnected")
     }
 
     /**
@@ -142,6 +199,10 @@ class NotificationListenerService : AndroidNotificationListenerService(), TextTo
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
+        if (!ttsReady || textToSpeech == null) {
+            initTextToSpeech()
+        }
+
         val packageName = sbn.packageName
         val notification = sbn.notification
         val extras = notification.extras
@@ -373,13 +434,15 @@ class NotificationListenerService : AndroidNotificationListenerService(), TextTo
         super.onTaskRemoved(rootIntent)
         // Log.d(TAG, "Service onTaskRemoved called")
         try {
-            // Restart the service if it's killed
-            val restartServiceIntent = Intent(applicationContext, NotificationListenerService::class.java)
-            restartServiceIntent.setPackage(packageName)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(restartServiceIntent)
-            } else {
-            startService(restartServiceIntent)
+            if (shouldKeepServiceRunning()) {
+                // Restart only when user expects background monitoring to stay enabled.
+                val restartServiceIntent = Intent(applicationContext, NotificationListenerService::class.java)
+                restartServiceIntent.setPackage(packageName)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(restartServiceIntent)
+                } else {
+                    startService(restartServiceIntent)
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error restarting service", e)
@@ -390,23 +453,52 @@ class NotificationListenerService : AndroidNotificationListenerService(), TextTo
         super.onDestroy()
         // Log.d(TAG, "Service onDestroy called")
         try {
-            textToSpeech?.stop()
-            textToSpeech?.shutdown()
+            safeShutdownTextToSpeech()
         } catch (e: Exception) {
             Log.e(TAG, "Error shutting down TextToSpeech", e)
         }
-        
+
         try {
-            // Restart the service if it's destroyed
-            val restartServiceIntent = Intent(applicationContext, NotificationListenerService::class.java)
-            restartServiceIntent.setPackage(packageName)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                startForegroundService(restartServiceIntent)
-            } else {
-            startService(restartServiceIntent)
+            if (shouldKeepServiceRunning()) {
+                // Avoid unconditional restart loops that can destabilize TTS lifecycle.
+                val restartServiceIntent = Intent(applicationContext, NotificationListenerService::class.java)
+                restartServiceIntent.setPackage(packageName)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(restartServiceIntent)
+                } else {
+                    startService(restartServiceIntent)
+                }
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error restarting service", e)
+        }
+    }
+
+    private fun scheduleTtsReinit(reason: String) {
+        if (ttsReinitInProgress) return
+        Log.w(TAG, "Scheduling TTS reinit: $reason")
+        mainHandler.post {
+            initTextToSpeech()
+        }
+    }
+
+    private fun safeShutdownTextToSpeech() {
+        try {
+            textToSpeech?.stop()
+            textToSpeech?.shutdown()
+        } finally {
+            textToSpeech = null
+            ttsReady = false
+            ttsReinitInProgress = false
+        }
+    }
+
+    private fun shouldKeepServiceRunning(): Boolean {
+        return try {
+            val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            prefs.getBoolean(KEY_SERVICE_STATE, false)
+        } catch (_: Exception) {
+            false
         }
     }
 
@@ -469,6 +561,7 @@ class NotificationListenerService : AndroidNotificationListenerService(), TextTo
         private const val KEY_SAVE_ENABLED = "save_enabled"
         private const val KEY_SPEECH_PREFIX = "speech_prefix"
         private const val KEY_SPEECH_CURRENCY = "speech_currency"
+        private const val KEY_SERVICE_STATE = "service_state"
         const val ACTION_NOTIFICATION_RECEIVED = "com.example.talking_bill.NOTIFICATION_RECEIVED"
         const val ACTION_RELOAD_CONFIG = "com.example.talking_bill.RELOAD_CONFIG"
         const val EXTRA_NOTIFICATION_DATA = "notification_data"
