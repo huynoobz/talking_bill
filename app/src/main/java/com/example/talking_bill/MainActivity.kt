@@ -220,7 +220,6 @@ class MainActivity : AppCompatActivity() {
         adapter = NotificationAdapter()
         notificationsRecyclerView.layoutManager = LinearLayoutManager(this)
         notificationsRecyclerView.adapter = adapter
-        adapter.onItemLongClick = { position -> deleteNotification(position) }
     }
 
     /**
@@ -437,36 +436,6 @@ class MainActivity : AppCompatActivity() {
                 Log.e("MainActivity", "Error loading notifications", e)
                 showCustomToast("Error loading notifications", false)
             }
-        }
-    }
-
-    /**
-     * Deletes a notification at the specified position.
-     * Updates both the UI and the stored notification log.
-     * @param position The position of the notification to delete
-     */
-    private fun deleteNotification(position: Int) {
-        try {
-            val currentList = adapter.getCurrentList().toMutableList()
-            adapter.removeItem(position)
-            
-            try {
-                openFileOutput(NOTIFICATION_LOG_FILE, Context.MODE_PRIVATE).use { output ->
-                    currentList.filterIndexed { index, _ -> index != position }
-                        .reversed()
-                        .forEach { notification ->
-                            output.write("$notification\n---\n".toByteArray())
-                        }
-                }
-                showCustomToast("Notification deleted", true)
-            } catch (e: Exception) {
-                Log.e("MainActivity", "Error updating notification file", e)
-                showCustomToast("Error updating notifications", false)
-                adapter.updateNotifications(currentList)
-            }
-        } catch (e: Exception) {
-            Log.e("MainActivity", "Error deleting notification", e)
-            showCustomToast("Error deleting notification", false)
         }
     }
 

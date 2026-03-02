@@ -18,7 +18,6 @@ import android.os.Looper
  */
 class NotificationAdapter : ListAdapter<String, NotificationAdapter.ViewHolder>(NotificationDiffCallback()) {
     private val mainHandler = Handler(Looper.getMainLooper())
-    var onItemLongClick: ((Int) -> Unit)? = null
     private val TAG = "NotificationAdapter"
     private var selectedPosition: Int = RecyclerView.NO_POSITION
 
@@ -73,10 +72,6 @@ class NotificationAdapter : ListAdapter<String, NotificationAdapter.ViewHolder>(
                     notifyItemChanged(adapterPos)
                 }
 
-                holder.itemView.setOnLongClickListener {
-                    onItemLongClick?.invoke(holder.adapterPosition)
-                    true
-                }
             } else {
                 Log.e(TAG, "Invalid position: $position")
             }
@@ -113,27 +108,6 @@ class NotificationAdapter : ListAdapter<String, NotificationAdapter.ViewHolder>(
                 submitList(newNotifications)
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating notifications", e)
-            }
-        }
-    }
-
-    /**
-     * Remove a notification at the specified position.
-     * @param position The position of the notification to remove
-     */
-    fun removeItem(position: Int) {
-        mainHandler.post {
-            try {
-                if (position in 0 until itemCount) {
-                    val currentList = currentList.toMutableList()
-                    currentList.removeAt(position)
-                    selectedPosition = RecyclerView.NO_POSITION
-                    submitList(currentList)
-                } else {
-                    Log.e(TAG, "Invalid position for removal: $position")
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Error removing item", e)
             }
         }
     }
