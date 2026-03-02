@@ -705,8 +705,17 @@ class MainActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("Reset App")
             .setMessage("This will reset all settings and clear all data. The app will restart. Are you sure?")
-            .setPositiveButton("Reset") { _, _ -> resetApp() }
+            .setPositiveButton("Reset") { _, _ -> showResetFinalConfirmationDialog() }
             .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun showResetFinalConfirmationDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Are you sure?")
+            .setMessage("This action cannot be undone.")
+            .setPositiveButton("Yes, Reset App") { _, _ -> resetApp() }
+            .setNegativeButton("No", null)
             .show()
     }
 
