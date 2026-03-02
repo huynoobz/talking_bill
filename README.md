@@ -28,6 +28,19 @@ Talking Bill is an Android app that listens to selected app notifications, detec
 4. Disable battery optimization for the app.
 5. Keep the app enabled; monitoring starts automatically after required permissions are granted.
 
+## How to Use
+
+1. Open the app and go to the **Notifications** tab.
+2. Send yourself a test notification from one of the configured apps (for example `momo` or `agribank`).
+3. If the message matches configured keywords and amount patterns, the app reads the amount aloud.
+4. Tap a notification item to switch to selectable text mode for easy copy/select. You can use this to help customing your own keywords.
+5. Open the **Settings** tab to customize:
+   - speech prefix
+   - currency text
+   - save-notification behavior
+6. Use **Clear** when you want to remove all saved notifications.
+7. Use **Reset** to restore default app settings.
+
 ## App Configuration
 
 The detection behavior is configured in `app/src/main/assets/app_config.json`.
