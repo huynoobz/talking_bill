@@ -4,6 +4,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -19,12 +20,16 @@ class NotificationAdapter : ListAdapter<String, NotificationAdapter.ViewHolder>(
     private val mainHandler = Handler(Looper.getMainLooper())
     var onItemLongClick: ((Int) -> Unit)? = null
     private val TAG = "NotificationAdapter"
+    private var selectedPosition: Int = RecyclerView.NO_POSITION
 
     /**
      * ViewHolder for notification items.
      */
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val textView: TextView = view.findViewById(R.id.notificationText)
+        private val editableViewId: Int =
+            view.resources.getIdentifier("notificationEditText", "id", view.context.packageName)
+        val editText: EditText? = if (editableViewId != 0) view.findViewById(editableViewId) else null
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -42,7 +47,32 @@ class NotificationAdapter : ListAdapter<String, NotificationAdapter.ViewHolder>(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         try {
             if (position in 0 until itemCount) {
-                holder.textView.text = getItem(position)
+                val itemText = getItem(position)
+                val isSelected = position == selectedPosition
+
+                holder.textView.text = itemText
+                holder.editText?.setText(itemText)
+                holder.editText?.keyListener = null
+                holder.editText?.setTextIsSelectable(true)
+                holder.editText?.showSoftInputOnFocus = false
+
+                val hasEditableView = holder.editText != null
+                holder.textView.visibility = if (isSelected && hasEditableView) View.GONE else View.VISIBLE
+                holder.editText?.visibility = if (isSelected) View.VISIBLE else View.GONE
+
+                holder.itemView.setOnClickListener {
+                    val adapterPos = holder.adapterPosition
+                    if (adapterPos == RecyclerView.NO_POSITION) return@setOnClickListener
+
+                    val previous = selectedPosition
+                    selectedPosition = if (previous == adapterPos) RecyclerView.NO_POSITION else adapterPos
+
+                    if (previous != RecyclerView.NO_POSITION) {
+                        notifyItemChanged(previous)
+                    }
+                    notifyItemChanged(adapterPos)
+                }
+
                 holder.itemView.setOnLongClickListener {
                     onItemLongClick?.invoke(holder.adapterPosition)
                     true
@@ -64,6 +94,7 @@ class NotificationAdapter : ListAdapter<String, NotificationAdapter.ViewHolder>(
             try {
                 val currentList = currentList.toMutableList()
                 currentList.add(0, notification)
+                selectedPosition = RecyclerView.NO_POSITION
                 submitList(currentList)
             } catch (e: Exception) {
                 Log.e(TAG, "Error adding notification", e)
@@ -78,6 +109,7 @@ class NotificationAdapter : ListAdapter<String, NotificationAdapter.ViewHolder>(
     fun updateNotifications(newNotifications: List<String>) {
         mainHandler.post {
             try {
+                selectedPosition = RecyclerView.NO_POSITION
                 submitList(newNotifications)
             } catch (e: Exception) {
                 Log.e(TAG, "Error updating notifications", e)
@@ -95,6 +127,7 @@ class NotificationAdapter : ListAdapter<String, NotificationAdapter.ViewHolder>(
                 if (position in 0 until itemCount) {
                     val currentList = currentList.toMutableList()
                     currentList.removeAt(position)
+                    selectedPosition = RecyclerView.NO_POSITION
                     submitList(currentList)
                 } else {
                     Log.e(TAG, "Invalid position for removal: $position")
@@ -111,6 +144,7 @@ class NotificationAdapter : ListAdapter<String, NotificationAdapter.ViewHolder>(
     fun clearNotifications() {
         mainHandler.post {
             try {
+                selectedPosition = RecyclerView.NO_POSITION
                 submitList(emptyList())
             } catch (e: Exception) {
                 Log.e(TAG, "Error clearing notifications", e)
