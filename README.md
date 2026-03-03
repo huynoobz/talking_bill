@@ -38,8 +38,9 @@ Talking Bill is an Android app that listens to selected app notifications, detec
    - speech prefix
    - currency text
    - save-notification behavior
-6. Use **Clear** when you want to remove all saved notifications.
-7. Use **Reset** to restore default app settings.
+6. Use **Clear All Notifications** when you want to remove saved notifications.
+7. Use **Repair** to restart app/service state without deleting saved data.
+8. Use **Reset App** to restore default settings and clear saved app data.
 
 ## App Configuration
 
@@ -59,7 +60,8 @@ Default config currently includes:
 - **Enable/Disable voice behavior**: Use the in-app toggles for filtering and announcements
 - **Save history**: Turn on notification saving to keep detected events
 - **Clear history**: Remove stored notifications from the app screen
-- **Reset settings**: Restore default app preferences
+- **Repair app state**: Reinitialize listener/service state without deleting saved data
+- **Reset settings/data**: Restore default preferences and clear saved app data
 - **Speech text customization**: Set your own prefix/currency phrase for announcements
 
 ## Reliability Notes
@@ -70,13 +72,13 @@ Default config currently includes:
 
 ## Troubleshooting
 
-If announcements stop working:
+If app not working:
 
 1. Re-check Notification Listener access.
 2. Confirm notification permission is still granted (Android 13+).
 3. Ensure battery optimization is disabled and the app is not restricted by OEM power manager.
 4. Trigger a sample notification from a configured app and verify the pattern in `app_config.json`.
-5. Restart the app or use the in-app reset option.
+5. Use the in-app **Repair** option first, or **Reset App** if a full cleanup is needed.
 
 ## Development
 
