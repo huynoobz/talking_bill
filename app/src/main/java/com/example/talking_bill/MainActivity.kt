@@ -7,7 +7,6 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.content.SharedPreferences
-import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -732,12 +731,8 @@ class MainActivity : AppCompatActivity() {
      */
     private fun showCustomToast(message: String, isSuccess: Boolean) {
         try {
-            val toast = Toast.makeText(this, message, Toast.LENGTH_SHORT)
-            val view = toast.view
-            view?.setBackgroundColor(if (isSuccess) getColor(R.color.toast_success) else getColor(R.color.toast_error))
-            val text = view?.findViewById<TextView>(android.R.id.message)
-            text?.setTextColor(Color.WHITE)
-            text?.textSize = 16f
+            val prefixedMessage = if (isSuccess) "Success: $message" else "Error: $message"
+            val toast = Toast.makeText(this, prefixedMessage, Toast.LENGTH_SHORT)
             toast.setGravity(Gravity.CENTER, 0, 0)
             toast.show()
         } catch (e: Exception) {
