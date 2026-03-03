@@ -1,0 +1,1 @@
+taskkill /F /IM java.exe; ./gradlew.bat clean; ./gradlew.bat assembleDebug; adb install app\build\outputs\apk\debug\app-debug.apk

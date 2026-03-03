@@ -97,11 +97,15 @@ class MainActivity : AppCompatActivity() {
         private const val KEY_SPEECH_PREFIX = "speech_prefix"
         private const val KEY_SPEECH_CURRENCY = "speech_currency"
         private const val KEY_PENDING_CHANNEL_DELETE = "pending_channel_delete"
+        private const val KEY_LAST_REPAIRED_VERSION_CODE = "last_repaired_version_code"
+        private const val KEY_LAST_DESTROY_TIMESTAMP = "last_destroy_timestamp"
+        private const val KEY_LAST_REPAIRED_UPDATE_TIME = "last_repaired_update_time"
         private const val NOTIFICATION_LOG_FILE = "notification_log.txt"
         private const val DEFAULT_SPEECH_PREFIX = "đã nhận"
         private const val DEFAULT_SPEECH_CURRENCY = "đồng"
         private const val RESET_INITIAL_DELAY_MS = 1000L
         private const val RESET_RESTART_DELAY_MS = 3000L
+        private const val AUTO_REPAIR_AFTER_DESTROY_MS = 10_000L
     }
 
     /**
@@ -129,6 +133,10 @@ class MainActivity : AppCompatActivity() {
         checkBatteryOptimization()
 
         prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+        if (shouldAutoRepairOnStartup()) {
+            scheduleAutoRepairAfterStartup()
+        }
         
         // Check if we need to delete the notification channel
         if (prefs.getBoolean(KEY_PENDING_CHANNEL_DELETE, false)) {
@@ -167,6 +175,66 @@ class MainActivity : AppCompatActivity() {
         updateUI()
         hideLoading()
         requestNotificationPermissionIfNeeded()
+    }
+
+    /**
+     * Returns true when startup should trigger auto-repair.
+     */
+    private fun shouldAutoRepairOnStartup(): Boolean {
+        val currentPackageUpdateTime = getPackageLastUpdateTime()
+        val lastRepairedUpdateTime = prefs.getLong(KEY_LAST_REPAIRED_UPDATE_TIME, -1L)
+        val lastDestroyTimestamp = prefs.getLong(KEY_LAST_DESTROY_TIMESTAMP, -1L)
+        val now = System.currentTimeMillis()
+
+        // If no tracked version exists yet (fresh install/reinstall or migrated prefs),
+        // run one startup repair and then persist current version in scheduler.
+
+        val isUpdatedPackage = currentPackageUpdateTime > 0 && currentPackageUpdateTime != lastRepairedUpdateTime
+        val isLongAfterDestroy = lastDestroyTimestamp > 0 && (now - lastDestroyTimestamp) > AUTO_REPAIR_AFTER_DESTROY_MS
+        Log.d(
+            "MainActivity",
+            "Auto-repair check: updatedPackage=$isUpdatedPackage, " +
+                "longAfterDestroy=$isLongAfterDestroy, lastDestroy=$lastDestroyTimestamp, now=$now"
+        )
+        return isUpdatedPackage || isLongAfterDestroy
+    }
+
+    /**
+     * Schedules repair on startup after install/update and records current version first
+     * to avoid repeated loops if startup gets interrupted.
+     */
+    private fun scheduleAutoRepairAfterStartup() {
+        val now = System.currentTimeMillis()
+        prefs.edit()
+            .putLong(KEY_LAST_REPAIRED_VERSION_CODE, getCurrentVersionCode())
+            .putLong(KEY_LAST_REPAIRED_UPDATE_TIME, getPackageLastUpdateTime())
+            .putLong(KEY_LAST_DESTROY_TIMESTAMP, now)
+            .apply()
+        repairApp()
+    }
+
+    private fun getCurrentVersionCode(): Long {
+        return try {
+            val packageInfo = packageManager.getPackageInfo(packageName, 0)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                packageInfo.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                packageInfo.versionCode.toLong()
+            }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Failed to read app version code", e)
+            0L
+        }
+    }
+
+    private fun getPackageLastUpdateTime(): Long {
+        return try {
+            packageManager.getPackageInfo(packageName, 0).lastUpdateTime
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Failed to read package lastUpdateTime", e)
+            0L
+        }
     }
 
     /**
@@ -332,6 +400,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         batteryOptimizationDialog?.dismiss()
         batteryOptimizationDialog = null
+        prefs.edit().putLong(KEY_LAST_DESTROY_TIMESTAMP, System.currentTimeMillis()).apply()
         
         try {
             unregisterReceiver(notificationReceiver)
@@ -373,6 +442,7 @@ class MainActivity : AppCompatActivity() {
             stopForegroundService()
             prefs.edit().putBoolean(KEY_SERVICE_STATE, false).apply()
         }
+
     }
 
     /**
