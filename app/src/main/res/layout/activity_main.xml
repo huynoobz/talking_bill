@@ -41,12 +41,19 @@
                         android:layout_marginBottom="12dp"
                         android:text="Please enable notification access"
                         android:textSize="16sp" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Customize Speech"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
+
 
                         <EditText
                             android:id="@+id/prefixEditText"
@@ -79,31 +86,6 @@
                             android:text="Save" />
                     </LinearLayout>
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:layout_marginBottom="8dp"
-                        android:gravity="center"
-                        android:orientation="horizontal">
-
-                        <Button
-                            android:id="@+id/resetButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="8dp"
-                            android:backgroundTint="@color/toast_error"
-                            android:text="Reset App"
-                            android:visibility="gone" />
-
-                        <Button
-                            android:id="@+id/clearButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Clear All"
-                            android:visibility="gone" />
-                    </LinearLayout>
-
                     <Button
                         android:id="@+id/enableButton"
                         android:layout_width="match_parent"
@@ -125,6 +107,41 @@
                         android:layout_height="wrap_content"
                         android:checked="true"
                         android:text="Filter/Voice" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginBottom="8dp"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/resetButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:backgroundTint="@color/toast_error"
+                            android:text="Reset App"
+                            android:visibility="gone" />
+
+                        <Button
+                            android:id="@+id/repairButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:text="Repair"
+                            android:visibility="gone" />
+
+                        <Button
+                            android:id="@+id/clearButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Clear All Notifications"
+                            android:visibility="gone" />
+                    </LinearLayout>
+
+
                 </LinearLayout>
             </ScrollView>
 
@@ -160,7 +177,8 @@
                         android:hint="Edit app_config JSON here"
                         android:inputType="textMultiLine|textNoSuggestions"
                         android:overScrollMode="always"
-                        android:padding="8dp" />
+                        android:padding="8dp"
+                        android:textSize="12sp" />
 
                     <LinearLayout
                         android:layout_width="match_parent"

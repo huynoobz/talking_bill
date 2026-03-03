@@ -58,6 +58,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var enableButton: Button
     private lateinit var clearButton: Button
     private lateinit var resetButton: Button
+    private lateinit var repairButton: Button
     private lateinit var saveToggle: Switch
     private lateinit var filterToggle: Switch
     private lateinit var notificationsRecyclerView: RecyclerView
@@ -178,6 +179,7 @@ class MainActivity : AppCompatActivity() {
         enableButton = binding.enableButton
         clearButton = binding.clearButton
         resetButton = binding.resetButton
+        repairButton = binding.repairButton
         saveToggle = binding.saveToggle
         filterToggle = binding.filterToggle
         notificationsRecyclerView = binding.notificationsRecyclerView
@@ -237,6 +239,10 @@ class MainActivity : AppCompatActivity() {
 
         resetButton.setOnClickListener {
             showResetConfirmationDialog()
+        }
+
+        repairButton.setOnClickListener {
+            showRepairConfirmationDialog()
         }
 
         binding.saveSpeechButton.setOnClickListener {
@@ -380,12 +386,14 @@ class MainActivity : AppCompatActivity() {
             enableButton.visibility = View.GONE
             clearButton.visibility = View.VISIBLE
             resetButton.visibility = View.VISIBLE
+            repairButton.visibility = View.VISIBLE
             loadNotifications()
         } else {
             statusText.text = "Please enable notification access"
             enableButton.visibility = View.VISIBLE
             clearButton.visibility = View.GONE
             resetButton.visibility = View.GONE
+            repairButton.visibility = View.GONE
         }
     }
 
@@ -689,41 +697,71 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
+     * Shows a confirmation dialog before repairing the app.
+     * Repair restarts internal app/service state without deleting saved data.
+     */
+    private fun showRepairConfirmationDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Repair App")
+            .setMessage("This will repair app/service state and restart the app without deleting saved data. Continue?")
+            .setPositiveButton("Repair") { _, _ -> repairApp() }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    /**
      * Resets the app to its initial state.
      * Clears all data, stops the service, and restarts the app.
      */
     private fun resetApp() {
-        showLoading("Resetting app...")
-        
+        performResetOrRepair(clearSavedData = true)
+    }
+
+    /**
+     * Repairs app/service state while preserving all saved user data.
+     */
+    private fun repairApp() {
+        performResetOrRepair(clearSavedData = false)
+    }
+
+    /**
+     * Performs reset/repair flow and restarts the app.
+     * @param clearSavedData true for full reset, false for repair (keep saved data)
+     */
+    private fun performResetOrRepair(clearSavedData: Boolean) {
+        showLoading(if (clearSavedData) "Resetting app..." else "Repairing app...")
+
         try {
             stopForegroundService()
-            
+
             mainHandler.postDelayed({
                 try {
                     prefs.edit().putBoolean(KEY_PENDING_CHANNEL_DELETE, true).apply()
 
-                    prefs.edit().clear().apply()
-                    deleteFile(NOTIFICATION_LOG_FILE)
-                    AppConfigStore.clearOverride(this)
+                    if (clearSavedData) {
+                        prefs.edit().clear().apply()
+                        deleteFile(NOTIFICATION_LOG_FILE)
+                        AppConfigStore.clearOverride(this)
 
-                    saveToggle.isChecked = true
-                    filterToggle.isChecked = true
+                        saveToggle.isChecked = true
+                        filterToggle.isChecked = true
 
-                    prefs.edit()
-                        .putString(KEY_SPEECH_PREFIX, DEFAULT_SPEECH_PREFIX)
-                        .putString(KEY_SPEECH_CURRENCY, DEFAULT_SPEECH_CURRENCY)
-                        .putBoolean(KEY_SAVE_ENABLED, true)
-                        .putBoolean(KEY_FILTER_ENABLED, true)
-                        .putBoolean(KEY_BACKGROUND_ENABLED, true)
-                        .apply()
+                        prefs.edit()
+                            .putString(KEY_SPEECH_PREFIX, DEFAULT_SPEECH_PREFIX)
+                            .putString(KEY_SPEECH_CURRENCY, DEFAULT_SPEECH_CURRENCY)
+                            .putBoolean(KEY_SAVE_ENABLED, true)
+                            .putBoolean(KEY_FILTER_ENABLED, true)
+                            .putBoolean(KEY_BACKGROUND_ENABLED, true)
+                            .apply()
 
-                    binding.prefixEditText.setText(DEFAULT_SPEECH_PREFIX)
-                    binding.currencyEditText.setText(DEFAULT_SPEECH_CURRENCY)
+                        binding.prefixEditText.setText(DEFAULT_SPEECH_PREFIX)
+                        binding.currencyEditText.setText(DEFAULT_SPEECH_CURRENCY)
 
-                    adapter.clearNotifications()
+                        adapter.clearNotifications()
+                    }
 
                     val componentName = ComponentName(this, NotificationListenerService::class.java)
-                    
+
                     packageManager.setComponentEnabledSetting(
                         componentName,
                         PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
@@ -737,21 +775,24 @@ class MainActivity : AppCompatActivity() {
                     )
 
                     startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
-                    
+
                     mainHandler.postDelayed({
                         hideLoading()
                         restartApp()
                     }, RESET_RESTART_DELAY_MS)
 
                 } catch (e: Exception) {
-                    Log.e("MainActivity", "Error during reset", e)
+                    Log.e("MainActivity", if (clearSavedData) "Error during reset" else "Error during repair", e)
                     hideLoading()
-                    showCustomToast("Error resetting app", false)
+                    showCustomToast(
+                        if (clearSavedData) "Error resetting app" else "Error repairing app",
+                        false
+                    )
                 }
             }, RESET_INITIAL_DELAY_MS)
 
         } catch (e: Exception) {
-            Log.e("MainActivity", "Error stopping service during reset", e)
+            Log.e("MainActivity", if (clearSavedData) "Error stopping service during reset" else "Error stopping service during repair", e)
             hideLoading()
             showCustomToast("Error stopping service", false)
         }
