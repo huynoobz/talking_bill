@@ -14,3 +14,5 @@
 .cxx
 local.properties
 git_commit_rule.txt
+run_cmd.txt
+.kotlin/sessions/
